@@ -382,7 +382,10 @@ def parse_loop(verb, statement, lineno=None):
 
 
 def parse_instruction(line, lineno=None):
-    method, statement = line.split(' ', 1)
+    method, _, statement = line.partition(' ')
+    if not statement and method.endswith('.'):
+        # a command without any arguments, e.g. `Refrigerate.`
+        method, statement = method[:-1], '.'
     functions = {
         'Take': parse_take,
         'Put': parse_put,

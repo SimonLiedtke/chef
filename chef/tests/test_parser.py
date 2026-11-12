@@ -979,6 +979,16 @@ class TestParseMethod(object):
                 'lineno': 3}]
 
 
+class TestParseInstruction(object):
+    def test_command_without_arguments(self):
+        d = chef_parser.parse_instruction('Refrigerate.', 5)
+        assert d == {'command': 'refrigerate', 'hours': None, 'lineno': 5}
+
+    def test_unknown_command_without_arguments(self):
+        with pytest.raises(ChefSyntaxError):
+            chef_parser.parse_instruction('Frobnicate.', 5)
+
+
 class TestParseMethodIntroduction(object):
     def test_first_instruction_starting_with_a_letter_of_the_headline(self):
         parsed_instructions, lineno = chef_parser.parse_method(
