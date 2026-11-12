@@ -10,8 +10,10 @@ except ImportError:
 
 import pytest
 
-from chef.interpreter import Interpreter, eval_instruction
-from chef.datastructures import Ingredients, Ingredient, IngredientProperties
+from chef.interpreter import Interpreter, RecipeEnded, eval_instruction,\
+        interpret_recipe
+from chef.datastructures import Ingredients, Ingredient, IngredientProperties,\
+        Recipe, undefined
 from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
@@ -492,3 +494,39 @@ class TestInterpreterAddDry(object):
             instruction('add_dry', mixing_bowl_id=None),
             deque(), self.interpreter)
         assert self.interpreter.first_mixing_bowl.top.properties.value == 17
+
+
+class TestInterpreterRefrigerate(object):
+    def setup_method(self, method):
+        self.interpreter = Interpreter()
+        self.interpreter.baking_dishes = [Ingredients([
+            Ingredient('water', IngredientProperties(97, False, True))])]
+
+    def test_without_hours(self):
+        stdout = StringIO()
+        with pytest.raises(RecipeEnded):
+            self.interpreter.refrigerate(None, None, stdout)
+        assert stdout.getvalue() == ''
+
+    def test_with_hours(self):
+        stdout = StringIO()
+        with pytest.raises(RecipeEnded):
+            self.interpreter.refrigerate(1, None, stdout)
+        assert stdout.getvalue() == 'a'
+
+    def test_ends_the_recipe_from_within_a_loop(self):
+        interpreter = Interpreter(Ingredients([
+            Ingredient('number', IngredientProperties(3, True, False))]))
+        with pytest.raises(RecipeEnded):
+            run(interpreter, [
+                loop_start('Count', 'number'),
+                instruction('refrigerate', hours=None),
+                loop_end('counted', 'number')])
+
+    def test_interpret_recipe_stops_without_error(self):
+        recipe = Recipe(
+            Ingredients(), undefined, undefined,
+            [instruction('refrigerate', hours=None),
+             instruction('put', ingredient='nonexisting')],
+            undefined)
+        interpret_recipe(recipe)

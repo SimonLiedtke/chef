@@ -18,6 +18,10 @@ from chef.utils import verbs_match
 from chef.external import pretty
 
 
+class RecipeEnded(Exception):
+    'Raised to stop the execution of a recipe early (see `Refrigerate`).'
+
+
 class Interpreter(object):
     def __init__(self, global_ingredients=None, mixing_bowls=None):
         if global_ingredients is None:
@@ -289,6 +293,16 @@ class Interpreter(object):
                 ingredient.properties.is_dry,
                 ingredient.properties.is_liquid)
 
+    def refrigerate(self, hours=None, lineno=None, stdout=sys.stdout):
+        '''This causes the execution of the recipe to end. If a number of hours
+        is specified, the first number baking dishes are served first (as if by
+        `Serves`).
+
+        '''
+        if hours is not None:
+            self.serves(hours, stdout)
+        raise RecipeEnded()
+
     def serves(self, num_of_diners, stdout=sys.stdout, encoding='utf-8'):
         '''This statement writes to STDOUT the contents of the first
         number-of-diners baking dishes. It begins with the 1st baking dish,
@@ -323,6 +337,8 @@ def eval_instruction(instruction, instructions, interpreter):
         args = [mixing_bowl_id]
     elif cmd == 'stir_minutes':
         args = [instruction['minutes'], mixing_bowl_id]
+    elif cmd == 'refrigerate':
+        args = [instruction['hours']]
     elif cmd == 'pour':
         args = [mixing_bowl_id, instruction['baking_dish_id']]
     elif cmd == 'loop_start':
@@ -337,9 +353,13 @@ def eval_instruction(instruction, instructions, interpreter):
 def interpret_recipe(recipe):
     interpreter = Interpreter(recipe.ingredients)
     instructions = deque(recipe.instructions)
-    while instructions:
-        instruction = instructions.popleft()
-        eval_instruction(instruction, instructions, interpreter)
+    try:
+        while instructions:
+            instruction = instructions.popleft()
+            eval_instruction(instruction, instructions, interpreter)
+    except RecipeEnded:
+        # `Refrigerate` ends the recipe, so the `Serves` line is not reached
+        return
     if recipe.serves is not undefined:
         interpreter.serves(recipe.serves)
 
