@@ -244,21 +244,27 @@ class Interpreter(object):
         statement after the "until". Loops may be nested.
 
         '''
+        # remove the loop body (including the matching loop end) from the
+        # instructions which are still to be executed
         body = []
-        for instr in following_instructions:
+        while following_instructions:
+            instr = following_instructions.popleft()
             body.append(instr)
-            if instr['command'] == 'loop_end' and verbs_match(verb, instr['verb']):
+            if (instr['command'] == 'loop_end' and
+                    verbs_match(verb, instr['verb'])):
                 break
         else:
             # no matching loop end
             raise MissingLoopEndError(verb, lineno)
-        #print 'body: %r' % body
         while True:
-            for instruction in body:
-                eval_instruction(instruction, following_instructions, self)
             ingredient = self.get_ingredient_by_name(ingredient_name, lineno)
             if ingredient.properties.value == 0:
                 break
+            # nested loops consume their bodies from this iteration's own
+            # queue, so every iteration starts with a fresh copy of the body
+            queue = deque(body)
+            while queue:
+                eval_instruction(queue.popleft(), queue, self)
 
     def loop_end(self, ingredient_name=None, lineno=None):
         '''If the ingredient appears in this statement, its value is
