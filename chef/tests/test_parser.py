@@ -748,6 +748,10 @@ class TestParseAddDry(object):
             'dry ingredients to 2nd mixing bowl.')
         assert d == {'command': 'add_dry', 'mixing_bowl_id': 2}
 
+    def test_with_default_mixing_bowl(self):
+        d = chef_parser.parse_add_dry('dry ingredients to mixing bowl.')
+        assert d == {'command': 'add_dry', 'mixing_bowl_id': None}
+
     def test_invalid(self):
         with pytest.raises(InvalidCommandError):
             chef_parser.parse_add_dry('dry ingredients to the mixing bowl.')
@@ -977,6 +981,23 @@ class TestParseMethod(object):
                 'command': 'take',
                 'ingredient': 'sugar',
                 'lineno': 3}]
+
+
+class TestParseInstruction(object):
+    def test_command_without_arguments(self):
+        d = chef_parser.parse_instruction('Refrigerate.', 5)
+        assert d == {'command': 'refrigerate', 'hours': None, 'lineno': 5}
+
+    def test_unknown_command_without_arguments(self):
+        with pytest.raises(ChefSyntaxError):
+            chef_parser.parse_instruction('Frobnicate.', 5)
+
+
+class TestParseMethodIntroduction(object):
+    def test_first_instruction_starting_with_a_letter_of_the_headline(self):
+        parsed_instructions, lineno = chef_parser.parse_method(
+            'Method.\nMix well.\nPut eggs into mixing bowl.', 1)
+        assert [d['command'] for d in parsed_instructions] == ['mix', 'put']
 
 
 def test_parse_serves():

@@ -1,6 +1,7 @@
 # coding: utf-8
 from __future__ import with_statement
 
+from collections import deque
 from operator import add
 try:
     from cStringIO import StringIO
@@ -9,11 +10,34 @@ except ImportError:
 
 import pytest
 
-from chef.interpreter import Interpreter
-from chef.datastructures import Ingredients, Ingredient, IngredientProperties
+from chef.interpreter import Interpreter, RecipeEnded, eval_instruction,\
+        interpret_recipe
+from chef.datastructures import Ingredients, Ingredient, IngredientProperties,\
+        Recipe, undefined
 from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
+
+
+def instruction(command, lineno=1, **kwargs):
+    d = {'command': command, 'lineno': lineno}
+    d.update(kwargs)
+    return d
+
+
+def loop_start(verb, ingredient):
+    return instruction('loop_start', verb=verb, ingredient=ingredient)
+
+
+def loop_end(verb, ingredient=None):
+    return instruction('loop_end', verb=verb, ingredient=ingredient)
+
+
+def run(interpreter, instructions):
+    'Execute `instructions` the way `interpret_recipe` does.'
+    instructions = deque(instructions)
+    while instructions:
+        eval_instruction(instructions.popleft(), instructions, interpreter)
 
 
 def test_interpreter_init():
@@ -166,12 +190,22 @@ class TestInterpreterFold(object):
         assert e.value.id == 1
 
     def test_working(self):
-        interpreter = Interpreter({'yeast': 47}, [Ingredients([23, 42, 1337])])
-        assert interpreter.mixing_bowls == [Ingredients([23, 42, 1337])]
-        assert interpreter.global_ingredients == {'yeast': 47}
+        interpreter = Interpreter(
+            Ingredients([
+                Ingredient('yeast', IngredientProperties(47, True, False))]),
+            [Ingredients([
+                Ingredient('flour', IngredientProperties(23, True, False)),
+                Ingredient('water', IngredientProperties(42, False, True))])])
         interpreter.fold('yeast')
-        assert interpreter.mixing_bowls == [Ingredients([23, 42])]
-        assert interpreter.global_ingredients == {'yeast': 1337}
+        assert interpreter.mixing_bowls == [Ingredients([
+            Ingredient('flour', IngredientProperties(23, True, False))])]
+        # the value (and its state) of the popped ingredient is taken over
+        assert interpreter.global_ingredients == Ingredients([
+            Ingredient('yeast', IngredientProperties(42, False, True))])
+        # the folded value is usable like any other ingredient
+        interpreter.put('yeast')
+        assert interpreter.first_mixing_bowl.top == Ingredient(
+            'yeast', IngredientProperties(42, False, True))
 
 
 def test_interpreter_calculate_with_empty_mixing_bowl():
@@ -283,7 +317,7 @@ class TestInterpreterLoopStart(object):
         interpreter = Interpreter(
             Ingredients([
                 Ingredient('number', IngredientProperties(1, True, False))]))
-        following_instructions = [
+        following_instructions = deque([
             {
                 'command': 'put',
                 'ingredient': 'number',
@@ -293,13 +327,13 @@ class TestInterpreterLoopStart(object):
                 'command': 'loop_end',
                 'ingredient': 'number',
                 'verb': 'counted',
-                'lineno': 9}]
+                'lineno': 9}])
         interpreter.loop_start('Count', 'number', following_instructions, 7)
         assert interpreter.first_mixing_bowl == Ingredients([
             Ingredient('number', IngredientProperties(1, True, False))])
 
     def test_multiple_iterations(self):
-        following_instructions = [
+        following_instructions = deque([
             {
                 'command': 'put',
                 'ingredient': 'number',
@@ -309,7 +343,7 @@ class TestInterpreterLoopStart(object):
                 'command': 'loop_end',
                 'ingredient': 'number',
                 'verb': 'counted',
-                'lineno': 9}]
+                'lineno': 9}])
         self.interpreter.loop_start(
             'Count', 'number', following_instructions, 7)
         assert self.interpreter.first_mixing_bowl == Ingredients([
@@ -317,12 +351,52 @@ class TestInterpreterLoopStart(object):
             Ingredient('number', IngredientProperties(2, True, False)),
             Ingredient('number', IngredientProperties(1, True, False))])
 
-    @pytest.mark.xfail
     def test_nested_loops(self):
-        assert False
+        interpreter = Interpreter(Ingredients([
+            Ingredient('i', IngredientProperties(2, True, False)),
+            Ingredient('j', IngredientProperties(2, True, False)),
+            Ingredient('x', IngredientProperties(7, True, False))]))
+        run(interpreter, [
+            loop_start('Analyze', 'i'),
+            loop_start('Examine', 'j'),
+            instruction('put', ingredient='j'),
+            loop_end('examined', 'j'),
+            instruction('put', ingredient='x'),
+            loop_end('analyzed', 'i'),
+            instruction('put', ingredient='x')])
+        # `j` is never reset, so the inner loop runs only in the first
+        # iteration of the outer loop
+        assert [(i.name, i.properties.value)
+                for i in interpreter.first_mixing_bowl] == [
+            ('j', 2), ('j', 1), ('x', 7), ('x', 7), ('x', 7)]
+
+    def test_body_is_not_executed_again_after_the_loop(self):
+        interpreter = Interpreter(Ingredients([
+            Ingredient('number', IngredientProperties(2, True, False)),
+            Ingredient('marker', IngredientProperties(0, True, False))]))
+        run(interpreter, [
+            loop_start('Count', 'number'),
+            instruction('put', ingredient='number'),
+            loop_end('counted', 'number'),
+            instruction('put', ingredient='marker')])
+        assert [(i.name, i.properties.value)
+                for i in interpreter.first_mixing_bowl] == [
+            ('number', 2), ('number', 1), ('marker', 0)]
+
+    def test_loop_is_skipped_if_the_value_is_zero(self):
+        interpreter = Interpreter(Ingredients([
+            Ingredient('number', IngredientProperties(0, True, False)),
+            Ingredient('marker', IngredientProperties(5, True, False))]))
+        run(interpreter, [
+            loop_start('Count', 'number'),
+            instruction('put', ingredient='number'),
+            loop_end('counted', 'number'),
+            instruction('put', ingredient='marker')])
+        assert [(i.name, i.properties.value)
+                for i in interpreter.first_mixing_bowl] == [('marker', 5)]
 
     def test_missing_loop_end(self):
-        following_instructions = [
+        following_instructions = deque([
             {
                 'command': 'put',
                 'ingredient': 'number',
@@ -332,7 +406,7 @@ class TestInterpreterLoopStart(object):
                 'command': 'add',
                 'ingredient': 'number',
                 'mixing_bowl_id': None,
-                'lineno': 9}]
+                'lineno': 9}])
         with pytest.raises(MissingLoopEndError):
             self.interpreter.loop_start(
                 'Count', 'number', following_instructions, 7)
@@ -355,3 +429,104 @@ def test_interpreter_serves():
     stdout.seek(0)
     output = stdout.read()
     assert output == '훘23a'
+
+
+def test_interpreter_calculate_replaces_the_top_ingredient():
+    interpreter = Interpreter(
+        Ingredients([
+            Ingredient('a', IngredientProperties(10, True, False))]),
+        [Ingredients([
+            Ingredient('a', IngredientProperties(1, True, False)),
+            Ingredient('b', IngredientProperties(2, True, False))])])
+    interpreter.add('a')
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('a', IngredientProperties(1, True, False)),
+        Ingredient('a', IngredientProperties(12, True, False))])
+
+
+def test_interpreter_liquefy_contents_with_duplicate_names():
+    interpreter = Interpreter(
+        Ingredients(),
+        [Ingredients([
+            Ingredient('a', IngredientProperties(1, True, False)),
+            Ingredient('a', IngredientProperties(2, True, False))])])
+    interpreter.liquefy_contents()
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('a', IngredientProperties(1, False, True)),
+        Ingredient('a', IngredientProperties(2, False, True))])
+
+
+def test_interpreter_mix(interpreter):
+    before = list(interpreter.first_mixing_bowl)
+    interpreter.mix()
+    assert sorted(interpreter.first_mixing_bowl) == sorted(before)
+
+
+def test_eval_stir_minutes(interpreter):
+    eval_instruction(
+        instruction('stir_minutes', minutes=1, mixing_bowl_id=None),
+        deque(), interpreter)
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('apples', IngredientProperties(100, True, False)),
+        Ingredient('cherries', IngredientProperties(300, True, False)),
+        Ingredient('ketchup', IngredientProperties(200, False, True))])
+
+
+class TestInterpreterAddDry(object):
+    def setup_method(self, method):
+        self.interpreter = Interpreter(Ingredients([
+            Ingredient('sugar', IngredientProperties(10, True, False)),
+            Ingredient('milk', IngredientProperties(5, False, True)),
+            Ingredient('flour', IngredientProperties(7, True, False)),
+            Ingredient('eggs', IngredientProperties(3, False, False))]))
+
+    def test_default_mixing_bowl(self):
+        self.interpreter.add_dry()
+        assert self.interpreter.first_mixing_bowl.top.properties.value == 17
+
+    def test_specific_mixing_bowl(self):
+        self.interpreter.add_dry(2)
+        assert self.interpreter.first_mixing_bowl == Ingredients()
+        assert self.interpreter.mixing_bowls[1].top.properties.value == 17
+
+    def test_via_eval_instruction(self):
+        eval_instruction(
+            instruction('add_dry', mixing_bowl_id=None),
+            deque(), self.interpreter)
+        assert self.interpreter.first_mixing_bowl.top.properties.value == 17
+
+
+class TestInterpreterRefrigerate(object):
+    def setup_method(self, method):
+        self.interpreter = Interpreter()
+        self.interpreter.baking_dishes = [Ingredients([
+            Ingredient('water', IngredientProperties(97, False, True))])]
+
+    def test_without_hours(self):
+        stdout = StringIO()
+        with pytest.raises(RecipeEnded):
+            self.interpreter.refrigerate(None, None, stdout)
+        assert stdout.getvalue() == ''
+
+    def test_with_hours(self):
+        stdout = StringIO()
+        with pytest.raises(RecipeEnded):
+            self.interpreter.refrigerate(1, None, stdout)
+        assert stdout.getvalue() == 'a'
+
+    def test_ends_the_recipe_from_within_a_loop(self):
+        interpreter = Interpreter(Ingredients([
+            Ingredient('number', IngredientProperties(3, True, False))]))
+        with pytest.raises(RecipeEnded):
+            run(interpreter, [
+                loop_start('Count', 'number'),
+                instruction('refrigerate', hours=None),
+                loop_end('counted', 'number')])
+
+    def test_interpret_recipe_stops_without_error(self):
+        recipe = Recipe(
+            Ingredients(), undefined, undefined,
+            [instruction('refrigerate', hours=None),
+             instruction('put', ingredient='nonexisting')],
+            undefined)
+        interpret_recipe(recipe)

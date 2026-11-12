@@ -237,7 +237,7 @@ def parse_add_dry(statement, lineno=None):
     # Add dry ingredients [to [nth] mixing bowl].
     pattern = (
         'dry ingredients'
-        '(?: to (%s )mixing bowl)?\.' % ORDINAL_IDENTIFIER_PATTERN)
+        '(?: to (?:(%s) )?mixing bowl)?\\.' % ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Add dry', lineno)
@@ -382,7 +382,10 @@ def parse_loop(verb, statement, lineno=None):
 
 
 def parse_instruction(line, lineno=None):
-    method, statement = line.split(' ', 1)
+    method, _, statement = line.partition(' ')
+    if not statement and method.endswith('.'):
+        # a command without any arguments, e.g. `Refrigerate.`
+        method, statement = method[:-1], '.'
     functions = {
         'Take': parse_take,
         'Put': parse_put,
@@ -413,7 +416,7 @@ def parse_instruction(line, lineno=None):
 def parse_method(paragraph, lineno):
     # remove the introductory line if it exists
     if paragraph.startswith('Method.\n'):
-        paragraph = paragraph.lstrip('Method.\n')
+        paragraph = paragraph[len('Method.\n'):]
     parsed_instructions = []
     for instr in paragraph.rstrip('.').split('.'):
         #lineno += instr.count('\n')

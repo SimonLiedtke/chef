@@ -8,13 +8,18 @@ from operator import add, sub, mul, floordiv as div
 
 from chef import __version__ as chef_version
 from chef.parser import parse_recipe
-from chef.datastructures import Ingredients, IngredientProperties, undefined
+from chef.datastructures import Ingredient, Ingredients,\
+        IngredientProperties, undefined
 from chef.errors import ChefError
 from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
 from chef.utils import verbs_match
 from chef.external import pretty
+
+
+class RecipeEnded(Exception):
+    'Raised to stop the execution of a recipe early (see `Refrigerate`).'
 
 
 class Interpreter(object):
@@ -78,10 +83,12 @@ class Interpreter(object):
         value_in_mixing_bowl = top_ingredient.properties.value
         result = func(value_in_mixing_bowl, value)
         # XXX: which ingredient name should be used?
-        mixing_bowl[ingredient_name] = IngredientProperties(
-            result,
-            ingredient.properties.is_dry,
-            ingredient.properties.is_liquid)
+        mixing_bowl.replace_top(Ingredient(
+            ingredient_name,
+            IngredientProperties(
+                result,
+                ingredient.properties.is_dry,
+                ingredient.properties.is_liquid)))
 
     def take(self, ingredient_name, lineno=None, stdin=sys.stdin):
         '''This reads a numeric value from STDIN into the ingredient named,
@@ -99,19 +106,22 @@ class Interpreter(object):
             ingredient.properties.is_dry,
             ingredient.properties.is_liquid)
 
-    def put(self, ingredient_name, mixing_bowl_id=None, lineno=None):
-        'This puts the ingredient into the nth mixing bowl.'
+    def get_or_create_mixing_bowl(self, mixing_bowl_id=None, lineno=None):
         try:
-            mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
+            return self.get_nth_container(mixing_bowl_id, lineno)
         except NonExistingContainerError:
             # create a new mixing bowl if the ID is larger than the current
             # largest mixing bowl ID by 1
             if mixing_bowl_id - 1 == len(self.mixing_bowls):
                 mixing_bowl = Ingredients()
                 self.mixing_bowls.append(mixing_bowl)
-            else:
-                raise InvalidContainerIDError(
-                    'mixing bowl', mixing_bowl_id, lineno)
+                return mixing_bowl
+            raise InvalidContainerIDError(
+                'mixing bowl', mixing_bowl_id, lineno)
+
+    def put(self, ingredient_name, mixing_bowl_id=None, lineno=None):
+        'This puts the ingredient into the nth mixing bowl.'
+        mixing_bowl = self.get_or_create_mixing_bowl(mixing_bowl_id, lineno)
         ingredient = self.get_ingredient_by_name(ingredient_name, lineno)
         mixing_bowl.append(ingredient)
 
@@ -125,7 +135,7 @@ class Interpreter(object):
             top_value = mixing_bowl.pop()
         except IndexError:
             raise EmptyContainerError('mixing bowl', mixing_bowl_id, lineno)
-        self.global_ingredients[ingredient_name] = top_value
+        self.global_ingredients[ingredient_name] = top_value.properties
 
     def add(self, ingredient_name, mixing_bowl_id=None, lineno=None):
         '''This adds the value of ingredient to the value of the ingredient on
@@ -159,12 +169,18 @@ class Interpreter(object):
         '''
         self.calculate(div, ingredient_name, mixing_bowl_id, lineno)
 
-    def add_dry(self, lineno=None):
+    def add_dry(self, mixing_bowl_id=None, lineno=None):
         '''This adds the values of all the dry ingredients together and places
         the result into the nth mixing bowl.
 
         '''
-        raise NotImplementedError()
+        mixing_bowl = self.get_or_create_mixing_bowl(mixing_bowl_id, lineno)
+        total = 0
+        for ingredient in self.global_ingredients:
+            if ingredient.properties.is_dry is True:
+                total += ingredient.properties.value
+        mixing_bowl.append(Ingredient(
+            'dry ingredients', IngredientProperties(total, False, False)))
 
     def liquefy_ingredient(self, ingredient_name, lineno=None):
         '''This turns the ingredient into a liquid, i.e. a Unicode character
@@ -181,9 +197,11 @@ class Interpreter(object):
 
         '''
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
-        for ingredient in list(mixing_bowl):
-            mixing_bowl[ingredient.name] = IngredientProperties(
-                ingredient.properties.value, False, True)
+        for index, ingredient in enumerate(list(mixing_bowl)):
+            mixing_bowl[index] = Ingredient(
+                ingredient.name,
+                IngredientProperties(
+                    ingredient.properties.value, False, True))
 
     def stir_minutes(self, minutes, mixing_bowl_id=None, lineno=None):
         '''This "rolls" the top number ingredients in the nth mixing bowl, such
@@ -209,7 +227,7 @@ class Interpreter(object):
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
         mixing_bowl.stir(ingredient.properties.value)
 
-    def mix(self, mixing_bowl_id=None, lineno=None):  # pragma: no cover
+    def mix(self, mixing_bowl_id=None, lineno=None):
         'This randomises the order of the ingredients in the nth mixing bowl.'
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
         random.shuffle(mixing_bowl)
@@ -239,23 +257,27 @@ class Interpreter(object):
         statement after the "until". Loops may be nested.
 
         '''
+        # remove the loop body (including the matching loop end) from the
+        # instructions which are still to be executed
         body = []
-        import pprint
-        pprint.pprint(following_instructions)
-        for instr in following_instructions:
+        while following_instructions:
+            instr = following_instructions.popleft()
             body.append(instr)
-            if instr['command'] == 'loop_end' and verbs_match(verb, instr['verb']):
+            if (instr['command'] == 'loop_end' and
+                    verbs_match(verb, instr['verb'])):
                 break
         else:
             # no matching loop end
             raise MissingLoopEndError(verb, lineno)
-        #print 'body: %r' % body
         while True:
-            for instruction in body:
-                eval_instruction(instruction, following_instructions, self)
             ingredient = self.get_ingredient_by_name(ingredient_name, lineno)
             if ingredient.properties.value == 0:
                 break
+            # nested loops consume their bodies from this iteration's own
+            # queue, so every iteration starts with a fresh copy of the body
+            queue = deque(body)
+            while queue:
+                eval_instruction(queue.popleft(), queue, self)
 
     def loop_end(self, ingredient_name=None, lineno=None):
         '''If the ingredient appears in this statement, its value is
@@ -270,6 +292,16 @@ class Interpreter(object):
                 new_value,
                 ingredient.properties.is_dry,
                 ingredient.properties.is_liquid)
+
+    def refrigerate(self, hours=None, lineno=None, stdout=sys.stdout):
+        '''This causes the execution of the recipe to end. If a number of hours
+        is specified, the first number baking dishes are served first (as if by
+        `Serves`).
+
+        '''
+        if hours is not None:
+            self.serves(hours, stdout)
+        raise RecipeEnded()
 
     def serves(self, num_of_diners, stdout=sys.stdout, encoding='utf-8'):
         '''This statement writes to STDOUT the contents of the first
@@ -301,12 +333,12 @@ def eval_instruction(instruction, instructions, interpreter):
     elif cmd in ('put', 'fold', 'add', 'remove', 'combine', 'divide',
             'stir_ingredient'):
         args = [ingredient, mixing_bowl_id]
-    elif cmd == 'add_dry':
-        args = []
-    elif cmd in ('liquefy_contents', 'mix', 'clean'):
+    elif cmd in ('add_dry', 'liquefy_contents', 'mix', 'clean'):
         args = [mixing_bowl_id]
     elif cmd == 'stir_minutes':
-        args = [mixing_bowl_id, instruction['minutes']]
+        args = [instruction['minutes'], mixing_bowl_id]
+    elif cmd == 'refrigerate':
+        args = [instruction['hours']]
     elif cmd == 'pour':
         args = [mixing_bowl_id, instruction['baking_dish_id']]
     elif cmd == 'loop_start':
@@ -321,9 +353,13 @@ def eval_instruction(instruction, instructions, interpreter):
 def interpret_recipe(recipe):
     interpreter = Interpreter(recipe.ingredients)
     instructions = deque(recipe.instructions)
-    while instructions:
-        instruction = instructions.popleft()
-        eval_instruction(instruction, instructions, interpreter)
+    try:
+        while instructions:
+            instruction = instructions.popleft()
+            eval_instruction(instruction, instructions, interpreter)
+    except RecipeEnded:
+        # `Refrigerate` ends the recipe, so the `Serves` line is not reached
+        return
     if recipe.serves is not undefined:
         interpreter.serves(recipe.serves)
 

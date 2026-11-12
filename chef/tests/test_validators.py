@@ -92,6 +92,24 @@ class TestValidateOrdinalIDSuffix(object):
         assert e.value.suffix == 'th'
 
 
+
+def test_valid_ordinal_identifiers():
+    valid = [
+        (1, 'st'), (2, 'nd'), (3, 'rd'), (4, 'th'), (10, 'th'), (11, 'th'),
+        (12, 'th'), (13, 'th'), (21, 'st'), (22, 'nd'), (23, 'rd'),
+        (101, 'st'), (102, 'nd'), (103, 'rd'), (111, 'th'), (112, 'th'),
+        (113, 'th'), (211, 'th'), (1011, 'th')]
+    for number, suffix in valid:
+        validate_ordinal_id_suffix(str(number), suffix)
+
+
+def test_invalid_ordinal_identifiers_with_teens_as_last_two_digits():
+    for number, suffix in [(111, 'st'), (112, 'nd'), (113, 'rd'),
+                           (1011, 'st'), (101, 'th'), (102, 'th')]:
+        with pytest.raises(syntax_errors.NonMatchingSuffixError):
+            validate_ordinal_id_suffix(str(number), suffix)
+
+
 class TestValidateMeasureType(object):
     params = {
         'test_non_matching_measure_type': [

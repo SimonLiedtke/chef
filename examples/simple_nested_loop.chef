@@ -1,20 +1,28 @@
-A backwards counter.
+A simple nested loop.
 
-This script counts backwards from 3 to 1 three times. So the expected output is:
-321
-321
-321
+This script counts from 1 to 3 three times. The inner counter j is set back to
+3 at the start of every outer iteration. The numbers are pushed onto the mixing
+bowl while counting down (3, 2, 1), but a baking dish is served from the top,
+so they come out in reverse order. The expected output is:
+123
+123
+123
 
 Ingredients.
 3 i
 3 j
+3 three
 10 ml newline
 
 Method.
 Count the i.
+Put newline into mixing bowl.
+Put three into mixing bowl.
+Fold j into mixing bowl.
 Scan the j.
 Put j into mixing bowl.
 Decrement the j until scanned.
-Put newline into mixing bowl.
 Decrement the i until counted.
 Pour contents of the mixing bowl into the baking dish.
+
+Serves 1.

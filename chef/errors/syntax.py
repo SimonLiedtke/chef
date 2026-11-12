@@ -6,8 +6,15 @@ class ChefSyntaxError(ChefError):
 
 
 class CustomSyntaxError(ChefSyntaxError):
+    '''Base class of syntax errors without any arguments besides the line
+    number. Subclasses set the message in the class attribute `msg`.
+
+    '''
     def __init__(self, lineno=None):
-        self.lineno = lineno
+        ChefError.__init__(self, self.msg, lineno)
+
+    def repr_args(self):
+        return ()
 
 
 class MissingTitleError(CustomSyntaxError):
@@ -32,178 +39,110 @@ class InvalidOvenTemperature(CustomSyntaxError):
 
 class InvalidMeasureTypeValue(CustomSyntaxError):
     def __init__(self, measure_type, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.measure_type = measure_type
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.measure_type)
-        else:
-            return '%s(%r, %d)' % (
-                self.__class__.__name__, self.measure_type, self.lineno)
-
-    def __str__(self):
-        msg = (
-            'invalid measure type value (%r); only the values "heaped" and'
+    def describe(self):
+        return (
+            'invalid measure type value (%r); only the values "heaped" and '
             '"level" are allowed' % self.measure_type)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+
+    def repr_args(self):
+        return (self.measure_type,)
 
 
 class NonMatchingMeasureTypeError(CustomSyntaxError):
     def __init__(self, measure, measure_type, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.measure = measure
         self.measure_type = measure_type
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r, %r)' % (
-                self.__class__.__name__, self.measure, self.measure_type)
-        else:
-            return '%s(%r, %r, %d)' % (
-                self.__class__.__name__, self.measure, self.measure_type,
-                self.lineno)
-
-    def __str__(self):
-        msg = (
+    def describe(self):
+        return (
             'the measure %r and the measure type %r '
-            'do not form a valid measure declaration')
-        if self.lineno is None:
-            self.msg += ' (line %d)' % self.lineno
-        return msg
+            'do not form a valid measure declaration' % (
+                self.measure, self.measure_type))
+
+    def repr_args(self):
+        return (self.measure, self.measure_type)
 
 
 class NotAllowedTimeError(ChefSyntaxError):
     def __init__(self, time, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.time = time
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.time)
-        else:
-            return '%s(%d, %d)' % (
-                self.__class__.__name__, self.time, self.lineno)
-
-    def __str__(self):
-        msg = (
+    def describe(self):
+        return (
             'the time %d is too low; '
             'only positive values are allowed' % self.time)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+
+    def repr_args(self):
+        return (self.time,)
 
 
 class OrdinalIdentifierError(ChefSyntaxError):
     def __init__(self, ordinal_identifier, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.ordinal_identifier = ordinal_identifier
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (
-                self.__class__.__name__, self.ordinal_identifier)
-        else:
-            return '%s(%r, %d)' % (
-                self.__class__.__name__, self.ordinal_identifier, self.lineno)
+    def describe(self):
+        return 'not a valid ordinal identifier: %r' % self.ordinal_identifier
 
-    def __str__(self):
-        msg = 'not a valid ordinal identifier: %r' % self.ordinal_identifier
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def repr_args(self):
+        return (self.ordinal_identifier,)
 
 
 class NonMatchingSuffixError(OrdinalIdentifierError):
     def __init__(self, number, suffix, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.number = number
         self.suffix = suffix
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%d, %s)' % (
-                self.__class__.__name__,
-                self.number,
-                self.suffix)
-        else:
-            return '%s(%d, %s, %d)' % (
-                self.__class__.__name__,
-                self.number,
-                self.suffix,
-                self.lineno)
-
-    def __str__(self):
-        msg = (
+    def describe(self):
+        return (
             'the number %d and the suffix %r do not form a valid '
             'ordinal identifier' % (self.number, self.suffix))
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+
+    def repr_args(self):
+        return (self.number, self.suffix)
 
 
 class NonMatchingUnitError(ChefSyntaxError):
     def __init__(self, number, unit, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.number = number
         self.unit = unit
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%d, %s)' % (
-                self.__class__.__name__, self.number, self.unit)
-        else:
-            return '%s(%d, %s, %d)' % (
-                self.__class__.__name__,
-                self.number,
-                self.unit,
-                self.lineno)
-
-    def __str__(self):
-        msg = (
+    def describe(self):
+        return (
             'the number %d and the unit %r do not form a valid '
             'cooking time' % (self.number, self.unit))
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+
+    def repr_args(self):
+        return (self.number, self.unit)
 
 
 class InvalidTimeDeclarationError(ChefSyntaxError):
     def __init__(self, hours, format, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.hours = hours
         self.format = format
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r, %r)' % (
-                self.__class__.__name__, self.hours, self.format)
-        else:
-            return '%s(%r, %r, %d)' % (
-                self.__class__.__name__, self.hours, self.format, self.lineno)
+    def describe(self):
+        return "invalid time declaration: '%d %s'" % (self.hours, self.format)
 
-    def __str__(self):
-        msg = "invalid time declaration: '%d %s'" % (self.hours, self.format)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def repr_args(self):
+        return (self.hours, self.format)
 
 
 class InvalidCommandError(ChefSyntaxError):
     def __init__(self, command, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.cmd = command
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.cmd)
-        else:
-            return '%s(%r, %d)' % (
-                self.__class__.__name__, self.cmd, self.lineno)
+    def describe(self):
+        return 'invalid command %r' % self.cmd
 
-    def __str__(self):
-        msg = 'invalid command %r' % self.cmd
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def repr_args(self):
+        return (self.cmd,)

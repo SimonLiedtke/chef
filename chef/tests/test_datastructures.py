@@ -100,3 +100,30 @@ class TestIngredientsStir(object):
             Ingredient('second', IngredientProperties(2, True, False)),
             Ingredient('third', IngredientProperties(3, True, False)),
             Ingredient('fourth', IngredientProperties(4, True, False))])
+
+
+class TestIngredientsIndexing(object):
+    def test_integer_index(self, ingredients):
+        assert ingredients[0].name == 'sugar'
+        assert ingredients[-1].name == 'water'
+
+    def test_set_integer_index(self, ingredients):
+        new = Ingredient('salt', IngredientProperties(1, True, False))
+        ingredients[0] = new
+        assert ingredients[0] == new
+        assert len(ingredients) == 2
+
+    def test_slice(self, ingredients):
+        assert ingredients[:1] == [ingredients[0]]
+
+    def test_replace_top(self, ingredients):
+        new = Ingredient('salt', IngredientProperties(1, True, False))
+        ingredients.replace_top(new)
+        assert ingredients.top == new
+        assert len(ingredients) == 2
+
+    def test_shuffle(self, ingredients):
+        import random
+        before = list(ingredients)
+        random.shuffle(ingredients)
+        assert sorted(ingredients) == sorted(before)
