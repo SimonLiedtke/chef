@@ -13,7 +13,7 @@ instructions.
 pip install .
 ```
 
-Python 3.8 or newer is required.
+Python 3.9 or newer is required.
 
 ## Usage
 

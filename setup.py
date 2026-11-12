@@ -9,7 +9,7 @@ setup(
     author_email='simonliedtke@posteo.de',
     url='http://pypi.python.org/pypi/chef',
     license='ISC',
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     packages=[
         'chef',
         'chef.errors',
