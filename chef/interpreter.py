@@ -102,19 +102,22 @@ class Interpreter(object):
             ingredient.properties.is_dry,
             ingredient.properties.is_liquid)
 
-    def put(self, ingredient_name, mixing_bowl_id=None, lineno=None):
-        'This puts the ingredient into the nth mixing bowl.'
+    def get_or_create_mixing_bowl(self, mixing_bowl_id=None, lineno=None):
         try:
-            mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
+            return self.get_nth_container(mixing_bowl_id, lineno)
         except NonExistingContainerError:
             # create a new mixing bowl if the ID is larger than the current
             # largest mixing bowl ID by 1
             if mixing_bowl_id - 1 == len(self.mixing_bowls):
                 mixing_bowl = Ingredients()
                 self.mixing_bowls.append(mixing_bowl)
-            else:
-                raise InvalidContainerIDError(
-                    'mixing bowl', mixing_bowl_id, lineno)
+                return mixing_bowl
+            raise InvalidContainerIDError(
+                'mixing bowl', mixing_bowl_id, lineno)
+
+    def put(self, ingredient_name, mixing_bowl_id=None, lineno=None):
+        'This puts the ingredient into the nth mixing bowl.'
+        mixing_bowl = self.get_or_create_mixing_bowl(mixing_bowl_id, lineno)
         ingredient = self.get_ingredient_by_name(ingredient_name, lineno)
         mixing_bowl.append(ingredient)
 
