@@ -1,5 +1,3 @@
-from operator import or_
-
 from chef.errors import syntax as syntax_errors
 
 
@@ -22,21 +20,13 @@ def validate_ordinal_id_suffix(number, suffix, lineno=None):
 
     '''
     num = int(number)
-    if suffix == 'st':
-        if not (num != 11 and number.endswith('1')):
-            raise syntax_errors.NonMatchingSuffixError(num, suffix)
-    elif suffix == 'nd':
-        if not (num != 12 and number.endswith('2')):
-            raise syntax_errors.NonMatchingSuffixError(num, suffix)
-    elif suffix == 'rd':
-        if not (num != 13 and number.endswith('3')):
-            raise syntax_errors.NonMatchingSuffixError(num, suffix)
+    # 11, 12 and 13 (also as the last two digits, e.g. 111) always take 'th'
+    if 10 < num % 100 < 14:
+        expected_suffix = 'th'
     else:
-        last_digit = number[-1]
-        assert suffix == 'th'
-        if not or_(
-                num in (11, 12, 13), last_digit not in set(['1', '2', '3'])):
-            raise syntax_errors.NonMatchingSuffixError(num, suffix)
+        expected_suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
+    if suffix != expected_suffix:
+        raise syntax_errors.NonMatchingSuffixError(num, suffix, lineno)
 
 
 def validate_value_measure(value, measure):
