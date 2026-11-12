@@ -8,7 +8,8 @@ from operator import add, sub, mul, floordiv as div
 
 from chef import __version__ as chef_version
 from chef.parser import parse_recipe
-from chef.datastructures import Ingredients, IngredientProperties, undefined
+from chef.datastructures import Ingredient, Ingredients,\
+        IngredientProperties, undefined
 from chef.errors import ChefError
 from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
@@ -78,10 +79,12 @@ class Interpreter(object):
         value_in_mixing_bowl = top_ingredient.properties.value
         result = func(value_in_mixing_bowl, value)
         # XXX: which ingredient name should be used?
-        mixing_bowl[ingredient_name] = IngredientProperties(
-            result,
-            ingredient.properties.is_dry,
-            ingredient.properties.is_liquid)
+        mixing_bowl.replace_top(Ingredient(
+            ingredient_name,
+            IngredientProperties(
+                result,
+                ingredient.properties.is_dry,
+                ingredient.properties.is_liquid)))
 
     def take(self, ingredient_name, lineno=None, stdin=sys.stdin):
         '''This reads a numeric value from STDIN into the ingredient named,

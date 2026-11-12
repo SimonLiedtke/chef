@@ -355,3 +355,16 @@ def test_interpreter_serves():
     stdout.seek(0)
     output = stdout.read()
     assert output == '훘23a'
+
+
+def test_interpreter_calculate_replaces_the_top_ingredient():
+    interpreter = Interpreter(
+        Ingredients([
+            Ingredient('a', IngredientProperties(10, True, False))]),
+        [Ingredients([
+            Ingredient('a', IngredientProperties(1, True, False)),
+            Ingredient('b', IngredientProperties(2, True, False))])])
+    interpreter.add('a')
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('a', IngredientProperties(1, True, False)),
+        Ingredient('a', IngredientProperties(12, True, False))])
