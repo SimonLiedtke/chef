@@ -63,7 +63,21 @@ undefined = Singleton(
     'a singleton used to show if a specific property of a recipe is undefined')
 
 
+try:
+    _string_types = basestring
+except NameError:
+    _string_types = str
+
+
 class Ingredients(list):
+    '''A list of ingredients (used for the global ingredients, the mixing bowls
+    and the baking dishes).
+
+    Strings are interpreted as ingredient names when indexing; everything else
+    (integers, slices) behaves like it does for a normal list, so e.g.
+    ``random.shuffle`` and ``del bowl[:]`` work.
+
+    '''
     @property
     def top(self):
         return list.__getitem__(self, -1)
@@ -75,12 +89,17 @@ class Ingredients(list):
         return False
 
     def __getitem__(self, ingredient_name):
+        if not isinstance(ingredient_name, _string_types):
+            return list.__getitem__(self, ingredient_name)
         for ingredient in self:
             if ingredient.name == ingredient_name:
                 return ingredient
         raise KeyError(ingredient_name)
 
     def __setitem__(self, ingredient_name, ingredient_properties):
+        if not isinstance(ingredient_name, _string_types):
+            list.__setitem__(self, ingredient_name, ingredient_properties)
+            return
         for index, ingredient in enumerate(self):
             if ingredient.name == ingredient_name:
                 # TODO: (remove the current value which is linked to
