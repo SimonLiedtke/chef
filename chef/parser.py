@@ -413,7 +413,7 @@ def parse_instruction(line, lineno=None):
 def parse_method(paragraph, lineno):
     # remove the introductory line if it exists
     if paragraph.startswith('Method.\n'):
-        paragraph = paragraph.lstrip('Method.\n')
+        paragraph = paragraph[len('Method.\n'):]
     parsed_instructions = []
     for instr in paragraph.rstrip('.').split('.'):
         #lineno += instr.count('\n')

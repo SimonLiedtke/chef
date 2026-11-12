@@ -979,6 +979,13 @@ class TestParseMethod(object):
                 'lineno': 3}]
 
 
+class TestParseMethodIntroduction(object):
+    def test_first_instruction_starting_with_a_letter_of_the_headline(self):
+        parsed_instructions, lineno = chef_parser.parse_method(
+            'Method.\nMix well.\nPut eggs into mixing bowl.', 1)
+        assert [d['command'] for d in parsed_instructions] == ['mix', 'put']
+
+
 def test_parse_serves():
     num_of_diners = chef_parser.parse_serves('Serves 7.', 12)
     assert num_of_diners == 7
