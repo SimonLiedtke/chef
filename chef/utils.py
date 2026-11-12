@@ -9,7 +9,16 @@ _double_consonant_past_pattern = re.compile(_double_consonant_pattern + 'ed')
 
 
 def read_until_blank_line(f):
-    return ''.join(iter(f.next, '\n'))
+    '''Read lines from `f` until a blank line (which is consumed, but not
+    returned) or the end of the file. Return the lines as a single string.
+
+    '''
+    lines = []
+    for line in iter(f.readline, ''):
+        if line == '\n':
+            break
+        lines.append(line)
+    return ''.join(lines)
 
 
 def verbs_match(present_form, past_form):
