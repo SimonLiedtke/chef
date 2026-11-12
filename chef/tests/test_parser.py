@@ -748,6 +748,10 @@ class TestParseAddDry(object):
             'dry ingredients to 2nd mixing bowl.')
         assert d == {'command': 'add_dry', 'mixing_bowl_id': 2}
 
+    def test_with_default_mixing_bowl(self):
+        d = chef_parser.parse_add_dry('dry ingredients to mixing bowl.')
+        assert d == {'command': 'add_dry', 'mixing_bowl_id': None}
+
     def test_invalid(self):
         with pytest.raises(InvalidCommandError):
             chef_parser.parse_add_dry('dry ingredients to the mixing bowl.')

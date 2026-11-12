@@ -237,7 +237,7 @@ def parse_add_dry(statement, lineno=None):
     # Add dry ingredients [to [nth] mixing bowl].
     pattern = (
         'dry ingredients'
-        '(?: to (%s )mixing bowl)?\.' % ORDINAL_IDENTIFIER_PATTERN)
+        '(?: to (?:(%s) )?mixing bowl)?\\.' % ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Add dry', lineno)
