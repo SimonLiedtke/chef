@@ -1,6 +1,3 @@
-from __future__ import with_statement
-
-from itertools import imap
 
 import pytest
 
@@ -61,7 +58,7 @@ class TestValidateOrdinalIDSuffix(object):
             cls.rd_numbers,
             cls.th_numbers]
         is_empty_list = lambda l: l == []
-        assert all(imap(is_empty_list, number_lists))
+        assert all(map(is_empty_list, number_lists))
 
     def test_st(self, number):
         with pytest.raises(syntax_errors.NonMatchingSuffixError) as e:

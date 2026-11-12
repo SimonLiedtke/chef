@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import pytest
 
 from chef.datastructures import Ingredient, IngredientProperties, Ingredients
@@ -41,7 +39,7 @@ class TestIngredientsGetitem(object):
     def test_non_accessible(self, ingredients):
         with pytest.raises(KeyError) as e:
             ingredients['melon']
-        assert e.value.message == 'melon'
+        assert e.value.args == ('melon',)
 
 
 class TestIngredientsSetitem(object):

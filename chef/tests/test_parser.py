@@ -1,10 +1,5 @@
-from __future__ import with_statement
-
 import re
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 import pytest
 
@@ -397,7 +392,7 @@ class TestDetectIngredientState(object):
     def test_invalid(self):
         with pytest.raises(ValueError) as e:
             chef_parser.detect_ingredient_state('blah')
-        assert e.value.message == "invalid measure: 'blah'"
+        assert str(e.value) == "invalid measure: 'blah'"
 
 
 class TestParseIngredientList(object):
@@ -510,7 +505,7 @@ class TestParseOvenTemperature(object):
 
 class TestGetOrdinalID(object):
     pattern = re.compile(
-        'Put tomatoes into (?:(%s )|the )salad bowl\.' % (
+        r'Put tomatoes into (?:(%s )|the )salad bowl\.' % (
             chef_parser.ORDINAL_IDENTIFIER_PATTERN))
 
     def test_without_id(self):

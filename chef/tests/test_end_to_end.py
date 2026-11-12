@@ -1,7 +1,5 @@
 # coding: utf-8
 '''Run the command line interface (`bin/chef`) in a separate process.'''
-from __future__ import with_statement
-
 import os
 import subprocess
 import sys
