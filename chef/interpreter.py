@@ -240,8 +240,6 @@ class Interpreter(object):
 
         '''
         body = []
-        import pprint
-        pprint.pprint(following_instructions)
         for instr in following_instructions:
             body.append(instr)
             if instr['command'] == 'loop_end' and verbs_match(verb, instr['verb']):
