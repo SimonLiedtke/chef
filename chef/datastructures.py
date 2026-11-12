@@ -82,6 +82,10 @@ class Ingredients(list):
     def top(self):
         return list.__getitem__(self, -1)
 
+    def replace_top(self, ingredient):
+        'Replace the topmost ingredient with `ingredient`.'
+        list.__setitem__(self, -1, ingredient)
+
     def __contains__(self, ingredient_name):
         for ingredient in self:
             if ingredient.name == ingredient_name:

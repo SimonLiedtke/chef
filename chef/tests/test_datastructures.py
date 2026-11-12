@@ -116,6 +116,12 @@ class TestIngredientsIndexing(object):
     def test_slice(self, ingredients):
         assert ingredients[:1] == [ingredients[0]]
 
+    def test_replace_top(self, ingredients):
+        new = Ingredient('salt', IngredientProperties(1, True, False))
+        ingredients.replace_top(new)
+        assert ingredients.top == new
+        assert len(ingredients) == 2
+
     def test_shuffle(self, ingredients):
         import random
         before = list(ingredients)
