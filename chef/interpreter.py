@@ -214,7 +214,7 @@ class Interpreter(object):
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
         mixing_bowl.stir(ingredient.properties.value)
 
-    def mix(self, mixing_bowl_id=None, lineno=None):  # pragma: no cover
+    def mix(self, mixing_bowl_id=None, lineno=None):
         'This randomises the order of the ingredients in the nth mixing bowl.'
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
         random.shuffle(mixing_bowl)

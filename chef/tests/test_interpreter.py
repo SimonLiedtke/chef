@@ -380,3 +380,9 @@ def test_interpreter_liquefy_contents_with_duplicate_names():
     assert interpreter.first_mixing_bowl == Ingredients([
         Ingredient('a', IngredientProperties(1, False, True)),
         Ingredient('a', IngredientProperties(2, False, True))])
+
+
+def test_interpreter_mix(interpreter):
+    before = list(interpreter.first_mixing_bowl)
+    interpreter.mix()
+    assert sorted(interpreter.first_mixing_bowl) == sorted(before)
