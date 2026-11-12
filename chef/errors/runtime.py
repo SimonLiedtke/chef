@@ -1,105 +1,77 @@
 from chef.errors import ChefError
 
+
 class ChefRuntimeError(ChefError):
     pass
 
 
 class InvalidInputError(ChefRuntimeError):
     def __init__(self, value, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.value = value
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.value)
-        else:
-            return '%s(%r, %d)' % (
-                self.__class__.__name__, self.value, self.lineno)
+    def describe(self):
+        return 'invalid input: %r' % self.value
 
-    def __str__(self):
-        msg = 'invalid input: %r' % self.value
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def repr_args(self):
+        return (self.value,)
 
 
 class UndefinedIngredientError(ChefRuntimeError):
     def __init__(self, ingredient, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.ingredient = ingredient
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.ingredient)
-        else:
-            return '%s(%r, %d)' % (
-                self.__class__.__name__, self.ingredient, self.lineno)
+    def describe(self):
+        return 'undefined ingredient: %r' % self.ingredient
 
-    def __str__(self):
-        msg = 'undefined ingredient: %r' % self.ingredient
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def repr_args(self):
+        return (self.ingredient,)
 
 
 class ContainerIDError(ChefRuntimeError):
+    '''Base class of the errors which are related to a mixing bowl or baking
+    dish. `type` is either 'mixing bowl' or 'baking dish'.
+
+    '''
     def __init__(self, type, id, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.type = type
         self.id = 1 if id is None else id
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r, %r)' % (self.__class__.__name__, self.type, self.id)
-        else:
-            return '%s(%r, %r, %d)' % (
-                self.__class__.__name__, self.type, self.id, self.lineno)
-
-    def __str__(self):
+    def describe(self):
         raise NotImplementedError(
             'do not raise this exception directly; instead, subclass '
-            'this class and define your custom __str__ method')
+            'this class and define your custom describe method')
+
+    def repr_args(self):
+        return (self.type, self.id)
 
 
 class InvalidContainerIDError(ContainerIDError):
-    def __str__(self):
-        msg = 'invalid ordinal identifier for mixing bowl: %r' % (self.type, self.id)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def describe(self):
+        return 'invalid ordinal identifier for %s: %r' % (self.type, self.id)
 
 
 class NonExistingContainerError(ContainerIDError):
-    def __str__(self):
-        msg = 'the mixing bowl #%d does not exist' % (self.type, self.id)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def describe(self):
+        return 'the %s #%d does not exist' % (self.type, self.id)
 
 
 class EmptyContainerError(ContainerIDError):
-    def __str__(self):
-        msg = 'the mixing bowl #%d is empty' % (self.type, self.id)
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+    def describe(self):
+        return 'the %s #%d is empty' % (self.type, self.id)
 
 
 class MissingLoopEndError(ChefRuntimeError):
     def __init__(self, verb, lineno=None):
+        ChefError.__init__(self, None, lineno)
         self.verb = verb
-        self.lineno = lineno
 
-    def __repr__(self):
-        if self.lineno is None:
-            return '%s(%r)' % (self.__class__.__name__, self.verb)
-        else:
-            return '%s(%r, %d)' % (self.__class__.__name__, self.verb, self.lineno)
-
-    def __str__(self):
-        msg = (
+    def describe(self):
+        return (
             'the loop with the verb %r does not have a matching '
-            'until-statement to mark the end of the loop') % self.verb
-        if self.lineno is not None:
-            msg += ' (line %d)' % self.lineno
-        return msg
+            'until-statement to mark the end of the loop' % self.verb)
+
+    def repr_args(self):
+        return (self.verb,)
