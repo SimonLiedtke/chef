@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='chef',
@@ -9,10 +9,10 @@ setup(
     author_email='simonliedtke@posteo.de',
     url='http://pypi.python.org/pypi/chef',
     license='ISC',
+    python_requires='>=3.8',
     packages=[
         'chef',
         'chef.errors',
-        'chef.tests',
     ],
     scripts=['bin/chef'],
     classifiers=[
@@ -23,8 +23,5 @@ setup(
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Interpreters',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7']
+        'Programming Language :: Python :: 3']
 )
