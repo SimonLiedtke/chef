@@ -1,7 +1,6 @@
-from __future__ import with_statement
-
 import sys
 import random
+import pprint
 import argparse
 from collections import deque
 from operator import add, sub, mul, floordiv as div
@@ -15,7 +14,6 @@ from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
 from chef.utils import verbs_match
-from chef.external import pretty
 
 
 class RecipeEnded(Exception):
@@ -90,11 +88,13 @@ class Interpreter(object):
                 ingredient.properties.is_dry,
                 ingredient.properties.is_liquid)))
 
-    def take(self, ingredient_name, lineno=None, stdin=sys.stdin):
+    def take(self, ingredient_name, lineno=None, stdin=None):
         '''This reads a numeric value from STDIN into the ingredient named,
         overwriting any previous value.
 
         '''
+        if stdin is None:
+            stdin = sys.stdin
         input = stdin.readline().strip()
         try:
             input_as_int = int(input)
@@ -293,7 +293,7 @@ class Interpreter(object):
                 ingredient.properties.is_dry,
                 ingredient.properties.is_liquid)
 
-    def refrigerate(self, hours=None, lineno=None, stdout=sys.stdout):
+    def refrigerate(self, hours=None, lineno=None, stdout=None):
         '''This causes the execution of the recipe to end. If a number of hours
         is specified, the first number baking dishes are served first (as if by
         `Serves`).
@@ -303,7 +303,7 @@ class Interpreter(object):
             self.serves(hours, stdout)
         raise RecipeEnded()
 
-    def serves(self, num_of_diners, stdout=sys.stdout, encoding='utf-8'):
+    def serves(self, num_of_diners, stdout=None):
         '''This statement writes to STDOUT the contents of the first
         number-of-diners baking dishes. It begins with the 1st baking dish,
         removing values from the top one by one and printing them until the
@@ -311,15 +311,16 @@ class Interpreter(object):
         have been printed.
 
         '''
+        if stdout is None:
+            stdout = sys.stdout
         for baking_dish in self.baking_dishes[:num_of_diners]:
             while baking_dish:
                 ingredient = baking_dish.pop()
                 if ingredient.properties.is_liquid:
-                    convert = unichr
+                    convert = chr
                 else:
-                    convert = unicode
-                value = convert(ingredient.properties.value).encode(encoding)
-                stdout.write(value)
+                    convert = str
+                stdout.write(convert(ingredient.properties.value))
         stdout.flush()
 
 
@@ -391,15 +392,15 @@ def main(argv=None):
         if ChefError in exctype.mro():
             # FIXME: show bold and red output!
             # -> relevant line bold, error message red
-            print value
-            print
+            print(value)
+            print()
             with open(filename) as f:
                 for lineno, line in enumerate(f):
                     # print two lines before and after the affected invalid
                     # line as context (inlcuding line numbers)
                     # TODO: right-align the col num, don't use \t
-                    if lineno in xrange(value.lineno - 2, value.lineno + 3):
-                        print '%d\t%s' % (lineno, line),
+                    if lineno in range(value.lineno - 2, value.lineno + 3):
+                        print('%d\t%s' % (lineno, line), end='')
         else:
             original_excepthook(exctype, value, traceback)
     original_excepthook = sys.excepthook
@@ -414,6 +415,6 @@ def main(argv=None):
     else:
         parsed_recipe = parse_recipe(sys.stdin)
     if args.parse_only:
-        pretty.pprint(parsed_recipe)
+        pprint.pprint(parsed_recipe._asdict(), sort_dicts=False)
     else:
         interpret_recipe(parsed_recipe)

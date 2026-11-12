@@ -10,11 +10,10 @@ instructions.
 ## Installation
 
 ```sh
-python setup.py install
+pip install .
 ```
 
-Supported Python versions: 2.5, 2.6, 2.7 (and PyPy). On Python 2.5 the
-third-party `argparse` package is required.
+Python 3.8 or newer is required.
 
 ## Usage
 
@@ -54,13 +53,13 @@ are in the [`examples`](examples) directory.
 
 ## Development
 
-Tests use [pytest](http://pytest.org), with `pytest-cov` and `mock`, and are
-run across interpreters with [tox](http://tox.testrun.org):
+Tests use [pytest](https://pytest.org) with `pytest-cov` and are run across
+interpreters with [tox](https://tox.wiki):
 
 ```sh
 tox
 # or, in a single environment:
-py.test --cov chef chef/tests
+pytest --cov chef chef/tests
 ```
 
 Project layout:

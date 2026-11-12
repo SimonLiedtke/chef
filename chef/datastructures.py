@@ -1,9 +1,4 @@
-from __future__ import with_statement
-
-try:
-    from collections import namedtuple
-except ImportError:
-    from namedtuple_recipe import namedtuple
+from collections import namedtuple
 
 IngredientProperties = namedtuple(
     'IngredientProperties', 'value is_dry is_liquid')
@@ -12,32 +7,6 @@ Ingredient = namedtuple('Ingredient', 'name properties')
 Recipe = namedtuple(
     'Recipe',
     'ingredients cooking_time oven_temperature instructions serves')
-
-
-def prettify_namedtuple(namedtuple_cls, breaking=True):
-    def func(self, p, cycle):
-        name = namedtuple_cls.__name__
-        if cycle:
-            p.text('%s(...)' % name)
-        else:
-            items = self._asdict().items()
-            l = len(items)
-            with p.group(4, '%s([' % name, '])'):
-                if breaking:
-                    p.breakable()
-                for i, (field, value) in enumerate(items):
-                    p.text('%s: ' % field)
-                    p.pretty(value)
-                    if i < l - 1:
-                        p.text(', ')
-                        if breaking:
-                            p.breakable()
-    namedtuple_cls.__pretty__ = func
-
-
-prettify_namedtuple(IngredientProperties, False)
-prettify_namedtuple(Ingredient, False)
-prettify_namedtuple(Recipe)
 
 
 class Singleton(object):
@@ -61,12 +30,6 @@ state of an ingredient (if it is dry or liquid) is unknown''')
 undefined = Singleton(
     'undefined',
     'a singleton used to show if a specific property of a recipe is undefined')
-
-
-try:
-    _string_types = basestring
-except NameError:
-    _string_types = str
 
 
 class Ingredients(list):
@@ -93,7 +56,7 @@ class Ingredients(list):
         return False
 
     def __getitem__(self, ingredient_name):
-        if not isinstance(ingredient_name, _string_types):
+        if not isinstance(ingredient_name, str):
             return list.__getitem__(self, ingredient_name)
         for ingredient in self:
             if ingredient.name == ingredient_name:
@@ -101,7 +64,7 @@ class Ingredients(list):
         raise KeyError(ingredient_name)
 
     def __setitem__(self, ingredient_name, ingredient_properties):
-        if not isinstance(ingredient_name, _string_types):
+        if not isinstance(ingredient_name, str):
             list.__setitem__(self, ingredient_name, ingredient_properties)
             return
         for index, ingredient in enumerate(self):

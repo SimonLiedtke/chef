@@ -1,11 +1,8 @@
 # coding: utf-8
-from __future__ import with_statement
-
 import os
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
+
+import pytest
 
 from chef.datastructures import Ingredient, IngredientProperties, Ingredients
 from chef.interpreter import Interpreter
@@ -15,14 +12,19 @@ RECIPE_DIR = os.path.abspath(
 
 
 def pytest_generate_tests(metafunc):
-    # called once per each test function
+    # parametrize the test functions of classes which have a `params`
+    # attribute (a dictionary which maps the name of a test function to a
+    # list of dictionaries with the arguments of one call of the function)
     params = getattr(metafunc.cls, 'params', {})
-    for funcargs in params.get(metafunc.function.__name__, []):
-        # schedule a new test function run with applied **funcargs
-        metafunc.addcall(funcargs=funcargs)
+    calls = params.get(metafunc.function.__name__)
+    if calls:
+        argnames = sorted(calls[0])
+        metafunc.parametrize(
+            argnames, [[call[name] for name in argnames] for call in calls])
 
 
-def pytest_funcarg__interpreter(request):
+@pytest.fixture
+def interpreter():
     return Interpreter(
         Ingredients([
             Ingredient('meat', IngredientProperties(50, True, False))]),
@@ -32,25 +34,30 @@ def pytest_funcarg__interpreter(request):
             Ingredient('cherries', IngredientProperties(300, True, False))])])
 
 
-def pytest_funcarg__ingredients(request):
+@pytest.fixture
+def ingredients():
     return Ingredients([
         Ingredient('sugar', IngredientProperties(120, True, False)),
         Ingredient('water', IngredientProperties(250, False, True))])
 
 
-def pytest_funcarg__fp_with_one_blank_line(request):
+@pytest.fixture
+def fp_with_one_blank_line():
     return StringIO('1st\n2nd\n3rd\n\n4th\n5th\n')
 
 
-def pytest_funcarg__fp_with_two_blank_lines(request):
+@pytest.fixture
+def fp_with_two_blank_lines():
     return StringIO('1st\n2nd\n3rd\n\n4th\n5th\n\n6th\n7th\n')
 
 
-def pytest_funcarg__fp_without_any_blank_line(request):
+@pytest.fixture
+def fp_without_any_blank_line():
     return StringIO('1st\n2nd\n3rd\n')
 
 
-def pytest_funcarg__missing_method_recipe(request):
+@pytest.fixture
+def missing_method_recipe():
     return StringIO('''A recipe which misses the method element.
 
 the comment
@@ -58,7 +65,8 @@ the comment
 not-a-method''')
 
 
-def pytest_funcarg__multiple_instr(request):
+@pytest.fixture
+def multiple_instr():
     return StringIO('''A recipe with more than one instruction.
 
 Method.
@@ -101,14 +109,16 @@ Pour contents of the mixing bowl into the baking dish.''')
 # 28. descr., ingredients, cooking time, oven temp. and serves?
 
 
-def pytest_funcarg__only_title_and_method(request):
+@pytest.fixture
+def only_title_and_method():
     return StringIO('''A very basic recipe.
 
 Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__description_only(request):
+@pytest.fixture
+def description_only():
     return StringIO('''A recipe with some text.
 
 This paragraph explains the recipe. It does not have real content here,
@@ -121,7 +131,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__ingredients_only(request):
+@pytest.fixture
+def ingredients_only():
     return StringIO('''A recipe with an ingredient list.
 
 Ingredients.
@@ -132,7 +143,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__cooking_time_only(request):
+@pytest.fixture
+def cooking_time_only():
     return StringIO('''A meal which has to be cooked 20 minutes.
 
 Cooking time: 20 minutes.
@@ -141,7 +153,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__oven_temp_only(request):
+@pytest.fixture
+def oven_temp_only():
     return StringIO('''A recipe which requires baking.
 
 Pre-heat oven to 200 degrees Celsius (gas mark 5).
@@ -150,7 +163,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__serves_only(request):
+@pytest.fixture
+def serves_only():
     return StringIO('''The meal which is only served, not made.
 
 Method.
@@ -159,7 +173,8 @@ Take apple from refrigerator.
 Serves 4.''')
 
 
-def pytest_funcarg__description_and_ingredients(request):
+@pytest.fixture
+def description_and_ingredients():
     return StringIO('''Gnocchi Mac and Cheese.
 
 This is a really simple and reduced form of the recipe I found at
@@ -176,7 +191,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__description_and_cooking_time(request):
+@pytest.fixture
+def description_and_cooking_time():
     return StringIO('''Cooked apple.
 
 A recipe where one is supposed to take out an apple from the refrigerator and
@@ -188,7 +204,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__description_and_oven_temp(request):
+@pytest.fixture
+def description_and_oven_temp():
     return StringIO('''Wasted energy.
 
 This is a recipe where the oven is pre-heated, but not used afterwards. What a
@@ -200,7 +217,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__description_and_serves(request):
+@pytest.fixture
+def description_and_serves():
     return StringIO('''A recipe for five.
 
 This is a recipe for five people. They should not be hungry, because all they
@@ -212,7 +230,8 @@ Take apple from refrigerator.
 Serves 5.''')
 
 
-def pytest_funcarg__ingredients_and_cooking_time(request):
+@pytest.fixture
+def ingredients_and_cooking_time():
     return StringIO('''Some strane tuna salad.
 
 Ingredients.
@@ -227,7 +246,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__ingredients_and_oven_temp(request):
+@pytest.fixture
+def ingredients_and_oven_temp():
     return StringIO('''Something typical American.
 
 Ingredients.
@@ -242,7 +262,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__ingredients_and_serves(request):
+@pytest.fixture
+def ingredients_and_serves():
     return StringIO('''Little food for many people.
 
 Ingredients.
@@ -256,7 +277,8 @@ Take apple from refrigerator.
 Serves 23.''')
 
 
-def pytest_funcarg__cooking_time_and_oven_temp(request):
+@pytest.fixture
+def cooking_time_and_oven_temp():
     return StringIO('''Untitled.
 
 Cooking time: 45 minutes.
@@ -267,7 +289,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__cooking_time_and_serves(request):
+@pytest.fixture
+def cooking_time_and_serves():
     return StringIO('''An apple for singles.
 
 Cooking time: 15 minutes.
@@ -278,7 +301,8 @@ Take apple from refrigerator.
 Serves 1.''')
 
 
-def pytest_funcarg__oven_temp_and_serves(request):
+@pytest.fixture
+def oven_temp_and_serves():
     return StringIO('''A meal for eight apple lovers.
 
 Pre-heat oven to 175 degrees Celsius.
@@ -289,7 +313,8 @@ Take apple from refrigerator.
 Serves 8.''')
 
 
-def pytest_funcarg__descr_ingr_cooking_time(request):
+@pytest.fixture
+def descr_ingr_cooking_time():
     return StringIO('''Apple dessert.
 
 This is a simple recipe.
@@ -305,7 +330,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__descr_ingr_oven_temp(request):
+@pytest.fixture
+def descr_ingr_oven_temp():
     return StringIO('''Dessert with oranges and vanilla ice cream.
 
 I have written enough recipes to be out of creativity now. So here's no text
@@ -324,7 +350,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__descr_ingr_serves(request):
+@pytest.fixture
+def descr_ingr_serves():
     return StringIO('''A satanic soup for witches and wizards.
 
 Don't try this at home. Seriously.
@@ -341,7 +368,8 @@ Take apple from refrigerator.
 Serves 12.''')
 
 
-def pytest_funcarg__descr_cooking_time_oven_temp(request):
+@pytest.fixture
+def descr_cooking_time_oven_temp():
     return StringIO('''Cook and pre-heat, look but don't eat.
 
 Bla bla bla.
@@ -354,7 +382,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__descr_cooking_time_serves(request):
+@pytest.fixture
+def descr_cooking_time_serves():
     return StringIO('''Bla bla bla.
 
 yada yada.
@@ -367,7 +396,8 @@ Take apple from refrigerator.
 Serves 5.''')
 
 
-def pytest_funcarg__descr_oven_temp_serves(request):
+@pytest.fixture
+def descr_oven_temp_serves():
     return StringIO('''Nothing.
 
 We pre-heat the oven, but don't put anything into it. Waste ALL the energy!
@@ -381,7 +411,8 @@ Take apple from refrigerator.
 Serves 1.''')
 
 
-def pytest_funcarg__ingr_cooking_time_oven_temp(request):
+@pytest.fixture
+def ingr_cooking_time_oven_temp():
     return StringIO('''Pickles 'n' wheat.
 
 Ingredients.
@@ -396,7 +427,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__ingr_cooking_time_serves(request):
+@pytest.fixture
+def ingr_cooking_time_serves():
     return StringIO('''2 girls, 1 cup.
 
 Ingredients.
@@ -411,7 +443,8 @@ Take apple from refrigerator.
 Serves 2.''')
 
 
-def pytest_funcarg__cooking_time_oven_temp_serves(request):
+@pytest.fixture
+def cooking_time_oven_temp_serves():
     return StringIO('''Da da daa.
 
 Cooking time: 2 hours.
@@ -424,7 +457,8 @@ Take apple from refrigerator.
 Serves 7.''')
 
 
-def pytest_funcarg__descr_ingr_cooking_time_oven_temp(request):
+@pytest.fixture
+def descr_ingr_cooking_time_oven_temp():
     return StringIO('''Yeuks.
 
 Bla bla bla, yada yada.
@@ -441,7 +475,8 @@ Method.
 Take apple from refrigerator.''')
 
 
-def pytest_funcarg__descr_ingr_cooking_time_serves(request):
+@pytest.fixture
+def descr_ingr_cooking_time_serves():
     return StringIO('''Screeeeeek.
 
 A description of the very important recipe. Here another sentence of those I
@@ -459,7 +494,8 @@ Take apple from refrigerator.
 Serves 4.''')
 
 
-def pytest_funcarg__descr_ingr_oven_temp_serves(request):
+@pytest.fixture
+def descr_ingr_oven_temp_serves():
     return StringIO('''Water and buns.
 
 Yep, that's it.
@@ -476,7 +512,8 @@ Take apple from refrigerator.
 Serves 6.''')
 
 
-def pytest_funcarg__descr_cooking_time_oven_temp_serves(request):
+@pytest.fixture
+def descr_cooking_time_oven_temp_serves():
     return StringIO('''Bla bla.
 
 Yada yada.
@@ -491,7 +528,8 @@ Take apple from refrigerator.
 Serves 2.''')
 
 
-def pytest_funcarg__ingr_cooking_time_oven_temp_serves(request):
+@pytest.fixture
+def ingr_cooking_time_oven_temp_serves():
     return StringIO('''yoghurt & bacon.
 
 Ingredients.
@@ -508,7 +546,8 @@ Take apple from refrigerator.
 Serves 10.''')
 
 
-def pytest_funcarg__invalid_code(request):
+@pytest.fixture
+def invalid_code():
     return StringIO('''valid title.
 
 a perfectly fine description follows.

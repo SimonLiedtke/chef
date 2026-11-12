@@ -1,12 +1,7 @@
 # coding: utf-8
-from __future__ import with_statement
-
 from collections import deque
 from operator import add
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 import pytest
 

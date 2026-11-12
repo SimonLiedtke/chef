@@ -6,3 +6,6 @@ env
 build
 tmp.log
 TODO
+__pycache__
+.pytest_cache
+dist
