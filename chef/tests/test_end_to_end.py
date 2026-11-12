@@ -184,7 +184,13 @@ class TestErrors(object):
 
 def test_version():
     returncode, out, err = run_chef(['--version'])
-    assert returncode == 0
-    # argparse prints the version to stderr on Python 2 and to stdout on
-    # Python 3
-    assert out.strip() == 'chef 0.1' or err.strip() == 'chef 0.1'
+    assert (returncode, out.strip(), err) == (0, 'chef 0.1', '')
+
+
+def test_parse_only():
+    returncode, out, err = run_chef(['-p', '-f', example_path('helloworld')])
+    assert (returncode, err) == (0, '')
+    # the recipe is printed, not run
+    assert "'ingredients'" in out
+    assert "'instructions'" in out
+    assert 'Hello world!' not in out
