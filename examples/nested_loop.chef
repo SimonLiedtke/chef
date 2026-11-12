@@ -1,18 +1,29 @@
-Reversed multiplication table.
+Multiplication table.
+
+This prints the multiplication table from 1 x 1 to 10 x 10, one row per line.
+Every number is preceded by a space, so every row starts with one. Both
+counters count down and the output is served from the top of the baking dish,
+so everything comes out in reverse order, i.e. ascending.
 
 Ingredients.
 10 i
 10 j
+10 ten
+32 ml space
+10 ml newline
 result
 
 Method.
 Analyze the i.
+Put ten into mixing bowl.
+Fold j into mixing bowl.
+Put newline into 2nd mixing bowl.
 Examine the j.
 Put j into mixing bowl.
 Combine i.
 Fold result into mixing bowl.
 Put result into 2nd mixing bowl.
-Clean mixing bowl.
+Put space into 2nd mixing bowl.
 Decrement the j until examined.
 Decrement the i until analyzed.
 Pour contents of the 2nd mixing bowl into the baking dish.
