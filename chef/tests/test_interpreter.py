@@ -1,6 +1,7 @@
 # coding: utf-8
 from __future__ import with_statement
 
+from collections import deque
 from operator import add
 try:
     from cStringIO import StringIO
@@ -9,11 +10,17 @@ except ImportError:
 
 import pytest
 
-from chef.interpreter import Interpreter
+from chef.interpreter import Interpreter, eval_instruction
 from chef.datastructures import Ingredients, Ingredient, IngredientProperties
 from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
+
+
+def instruction(command, lineno=1, **kwargs):
+    d = {'command': command, 'lineno': lineno}
+    d.update(kwargs)
+    return d
 
 
 def test_interpreter_init():
@@ -396,3 +403,13 @@ def test_interpreter_mix(interpreter):
     before = list(interpreter.first_mixing_bowl)
     interpreter.mix()
     assert sorted(interpreter.first_mixing_bowl) == sorted(before)
+
+
+def test_eval_stir_minutes(interpreter):
+    eval_instruction(
+        instruction('stir_minutes', minutes=1, mixing_bowl_id=None),
+        deque(), interpreter)
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('apples', IngredientProperties(100, True, False)),
+        Ingredient('cherries', IngredientProperties(300, True, False)),
+        Ingredient('ketchup', IngredientProperties(200, False, True))])

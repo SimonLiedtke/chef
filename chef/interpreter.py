@@ -309,7 +309,7 @@ def eval_instruction(instruction, instructions, interpreter):
     elif cmd in ('liquefy_contents', 'mix', 'clean'):
         args = [mixing_bowl_id]
     elif cmd == 'stir_minutes':
-        args = [mixing_bowl_id, instruction['minutes']]
+        args = [instruction['minutes'], mixing_bowl_id]
     elif cmd == 'pour':
         args = [mixing_bowl_id, instruction['baking_dish_id']]
     elif cmd == 'loop_start':
