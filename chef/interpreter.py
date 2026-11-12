@@ -165,12 +165,18 @@ class Interpreter(object):
         '''
         self.calculate(div, ingredient_name, mixing_bowl_id, lineno)
 
-    def add_dry(self, lineno=None):
+    def add_dry(self, mixing_bowl_id=None, lineno=None):
         '''This adds the values of all the dry ingredients together and places
         the result into the nth mixing bowl.
 
         '''
-        raise NotImplementedError()
+        mixing_bowl = self.get_or_create_mixing_bowl(mixing_bowl_id, lineno)
+        total = 0
+        for ingredient in self.global_ingredients:
+            if ingredient.properties.is_dry is True:
+                total += ingredient.properties.value
+        mixing_bowl.append(Ingredient(
+            'dry ingredients', IngredientProperties(total, False, False)))
 
     def liquefy_ingredient(self, ingredient_name, lineno=None):
         '''This turns the ingredient into a liquid, i.e. a Unicode character
@@ -313,9 +319,7 @@ def eval_instruction(instruction, instructions, interpreter):
     elif cmd in ('put', 'fold', 'add', 'remove', 'combine', 'divide',
             'stir_ingredient'):
         args = [ingredient, mixing_bowl_id]
-    elif cmd == 'add_dry':
-        args = []
-    elif cmd in ('liquefy_contents', 'mix', 'clean'):
+    elif cmd in ('add_dry', 'liquefy_contents', 'mix', 'clean'):
         args = [mixing_bowl_id]
     elif cmd == 'stir_minutes':
         args = [instruction['minutes'], mixing_bowl_id]

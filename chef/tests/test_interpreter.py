@@ -468,3 +468,27 @@ def test_eval_stir_minutes(interpreter):
         Ingredient('apples', IngredientProperties(100, True, False)),
         Ingredient('cherries', IngredientProperties(300, True, False)),
         Ingredient('ketchup', IngredientProperties(200, False, True))])
+
+
+class TestInterpreterAddDry(object):
+    def setup_method(self, method):
+        self.interpreter = Interpreter(Ingredients([
+            Ingredient('sugar', IngredientProperties(10, True, False)),
+            Ingredient('milk', IngredientProperties(5, False, True)),
+            Ingredient('flour', IngredientProperties(7, True, False)),
+            Ingredient('eggs', IngredientProperties(3, False, False))]))
+
+    def test_default_mixing_bowl(self):
+        self.interpreter.add_dry()
+        assert self.interpreter.first_mixing_bowl.top.properties.value == 17
+
+    def test_specific_mixing_bowl(self):
+        self.interpreter.add_dry(2)
+        assert self.interpreter.first_mixing_bowl == Ingredients()
+        assert self.interpreter.mixing_bowls[1].top.properties.value == 17
+
+    def test_via_eval_instruction(self):
+        eval_instruction(
+            instruction('add_dry', mixing_bowl_id=None),
+            deque(), self.interpreter)
+        assert self.interpreter.first_mixing_bowl.top.properties.value == 17
