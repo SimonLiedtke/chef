@@ -184,9 +184,11 @@ class Interpreter(object):
 
         '''
         mixing_bowl = self.get_nth_container(mixing_bowl_id, lineno)
-        for ingredient in list(mixing_bowl):
-            mixing_bowl[ingredient.name] = IngredientProperties(
-                ingredient.properties.value, False, True)
+        for index, ingredient in enumerate(list(mixing_bowl)):
+            mixing_bowl[index] = Ingredient(
+                ingredient.name,
+                IngredientProperties(
+                    ingredient.properties.value, False, True))
 
     def stir_minutes(self, minutes, mixing_bowl_id=None, lineno=None):
         '''This "rolls" the top number ingredients in the nth mixing bowl, such

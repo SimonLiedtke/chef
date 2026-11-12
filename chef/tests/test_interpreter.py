@@ -368,3 +368,15 @@ def test_interpreter_calculate_replaces_the_top_ingredient():
     assert interpreter.first_mixing_bowl == Ingredients([
         Ingredient('a', IngredientProperties(1, True, False)),
         Ingredient('a', IngredientProperties(12, True, False))])
+
+
+def test_interpreter_liquefy_contents_with_duplicate_names():
+    interpreter = Interpreter(
+        Ingredients(),
+        [Ingredients([
+            Ingredient('a', IngredientProperties(1, True, False)),
+            Ingredient('a', IngredientProperties(2, True, False))])])
+    interpreter.liquefy_contents()
+    assert interpreter.first_mixing_bowl == Ingredients([
+        Ingredient('a', IngredientProperties(1, False, True)),
+        Ingredient('a', IngredientProperties(2, False, True))])
