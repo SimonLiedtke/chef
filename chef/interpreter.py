@@ -128,7 +128,7 @@ class Interpreter(object):
             top_value = mixing_bowl.pop()
         except IndexError:
             raise EmptyContainerError('mixing bowl', mixing_bowl_id, lineno)
-        self.global_ingredients[ingredient_name] = top_value
+        self.global_ingredients[ingredient_name] = top_value.properties
 
     def add(self, ingredient_name, mixing_bowl_id=None, lineno=None):
         '''This adds the value of ingredient to the value of the ingredient on

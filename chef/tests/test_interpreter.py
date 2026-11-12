@@ -166,12 +166,22 @@ class TestInterpreterFold(object):
         assert e.value.id == 1
 
     def test_working(self):
-        interpreter = Interpreter({'yeast': 47}, [Ingredients([23, 42, 1337])])
-        assert interpreter.mixing_bowls == [Ingredients([23, 42, 1337])]
-        assert interpreter.global_ingredients == {'yeast': 47}
+        interpreter = Interpreter(
+            Ingredients([
+                Ingredient('yeast', IngredientProperties(47, True, False))]),
+            [Ingredients([
+                Ingredient('flour', IngredientProperties(23, True, False)),
+                Ingredient('water', IngredientProperties(42, False, True))])])
         interpreter.fold('yeast')
-        assert interpreter.mixing_bowls == [Ingredients([23, 42])]
-        assert interpreter.global_ingredients == {'yeast': 1337}
+        assert interpreter.mixing_bowls == [Ingredients([
+            Ingredient('flour', IngredientProperties(23, True, False))])]
+        # the value (and its state) of the popped ingredient is taken over
+        assert interpreter.global_ingredients == Ingredients([
+            Ingredient('yeast', IngredientProperties(42, False, True))])
+        # the folded value is usable like any other ingredient
+        interpreter.put('yeast')
+        assert interpreter.first_mixing_bowl.top == Ingredient(
+            'yeast', IngredientProperties(42, False, True))
 
 
 def test_interpreter_calculate_with_empty_mixing_bowl():
