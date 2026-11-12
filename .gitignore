@@ -9,3 +9,4 @@ TODO
 __pycache__
 .pytest_cache
 dist
+coverage.xml
