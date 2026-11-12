@@ -1,5 +1,6 @@
 import sys
 import random
+import pprint
 import argparse
 from collections import deque
 from operator import add, sub, mul, floordiv as div
@@ -13,7 +14,6 @@ from chef.errors.runtime import InvalidInputError, UndefinedIngredientError,\
         InvalidContainerIDError, NonExistingContainerError,\
         EmptyContainerError, MissingLoopEndError
 from chef.utils import verbs_match
-from chef.external import pretty
 
 
 class RecipeEnded(Exception):
@@ -412,6 +412,6 @@ def main(argv=None):
     else:
         parsed_recipe = parse_recipe(sys.stdin)
     if args.parse_only:
-        pretty.pprint(parsed_recipe)
+        pprint.pprint(parsed_recipe._asdict(), sort_dicts=False)
     else:
         interpret_recipe(parsed_recipe)

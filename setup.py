@@ -12,7 +12,6 @@ setup(
     packages=[
         'chef',
         'chef.errors',
-        'chef.external',
         'chef.tests',
     ],
     scripts=['bin/chef'],

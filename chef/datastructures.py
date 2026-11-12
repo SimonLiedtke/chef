@@ -9,32 +9,6 @@ Recipe = namedtuple(
     'ingredients cooking_time oven_temperature instructions serves')
 
 
-def prettify_namedtuple(namedtuple_cls, breaking=True):
-    def func(self, p, cycle):
-        name = namedtuple_cls.__name__
-        if cycle:
-            p.text('%s(...)' % name)
-        else:
-            items = self._asdict().items()
-            l = len(items)
-            with p.group(4, '%s([' % name, '])'):
-                if breaking:
-                    p.breakable()
-                for i, (field, value) in enumerate(items):
-                    p.text('%s: ' % field)
-                    p.pretty(value)
-                    if i < l - 1:
-                        p.text(', ')
-                        if breaking:
-                            p.breakable()
-    namedtuple_cls.__pretty__ = func
-
-
-prettify_namedtuple(IngredientProperties, False)
-prettify_namedtuple(Ingredient, False)
-prettify_namedtuple(Recipe)
-
-
 class Singleton(object):
     def __new__(type, *args):
         if not '_the_instance' in type.__dict__:
