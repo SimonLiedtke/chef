@@ -1,9 +1,4 @@
-from __future__ import with_statement
-
-try:
-    from collections import namedtuple
-except ImportError:
-    from namedtuple_recipe import namedtuple
+from collections import namedtuple
 
 IngredientProperties = namedtuple(
     'IngredientProperties', 'value is_dry is_liquid')
@@ -63,12 +58,6 @@ undefined = Singleton(
     'a singleton used to show if a specific property of a recipe is undefined')
 
 
-try:
-    _string_types = basestring
-except NameError:
-    _string_types = str
-
-
 class Ingredients(list):
     '''A list of ingredients (used for the global ingredients, the mixing bowls
     and the baking dishes).
@@ -93,7 +82,7 @@ class Ingredients(list):
         return False
 
     def __getitem__(self, ingredient_name):
-        if not isinstance(ingredient_name, _string_types):
+        if not isinstance(ingredient_name, str):
             return list.__getitem__(self, ingredient_name)
         for ingredient in self:
             if ingredient.name == ingredient_name:
@@ -101,7 +90,7 @@ class Ingredients(list):
         raise KeyError(ingredient_name)
 
     def __setitem__(self, ingredient_name, ingredient_properties):
-        if not isinstance(ingredient_name, _string_types):
+        if not isinstance(ingredient_name, str):
             list.__setitem__(self, ingredient_name, ingredient_properties)
             return
         for index, ingredient in enumerate(self):
