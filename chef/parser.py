@@ -146,7 +146,7 @@ def parse_ingredient_preposition_nth_mixing_bowl(cmd, preposition, statement,
                                                  lineno=None):
     # cmd ingredient preposition [nth ]mixing bowl.
     #pattern = '(.+?) %s (?:(%s )|the )mixing bowl\.' % (
-    pattern = '(.+?) %s (?:(%s) )?mixing bowl\.' % (
+    pattern = r'(.+?) %s (?:(%s) )?mixing bowl\.' % (
         preposition, ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
@@ -183,7 +183,7 @@ def parse_ingredient_optional_preposition_nth_mixing_bowl(cmd, preposition,
 
 def parse_take(statement, lineno=None):
     # Take ingredient from refrigerator.
-    m = re.match('(.+?) from refrigerator\.', statement)
+    m = re.match(r'(.+?) from refrigerator\.', statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Take', lineno)
     return {'command': 'take', 'ingredient': m.group(1)}
@@ -237,7 +237,7 @@ def parse_add_dry(statement, lineno=None):
     # Add dry ingredients [to [nth] mixing bowl].
     pattern = (
         'dry ingredients'
-        '(?: to (?:(%s) )?mixing bowl)?\\.' % ORDINAL_IDENTIFIER_PATTERN)
+        r'(?: to (?:(%s) )?mixing bowl)?\.' % ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Add dry', lineno)
@@ -247,7 +247,7 @@ def parse_add_dry(statement, lineno=None):
 
 def parse_liquefy_ingredient(statement, lineno=None):
     # Liquefy ingredient.
-    m = re.match('(.+?)\.', statement)
+    m = re.match(r'(.+?)\.', statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Liquefy', lineno)
     return {'command': 'liquefy_ingredient', 'ingredient': m.group(1)}
@@ -256,7 +256,7 @@ def parse_liquefy_ingredient(statement, lineno=None):
 def parse_liquefy_contents(statement, lineno=None):
     # Liquefy contents of the [nth] mixing bowl.
     pattern = (
-        'contents of the( (%s))? mixing bowl\.' % ORDINAL_IDENTIFIER_PATTERN)
+        r'contents of the( (%s))? mixing bowl\.' % ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
         return parse_liquefy_ingredient(statement, lineno)
@@ -268,7 +268,7 @@ def parse_liquefy_contents(statement, lineno=None):
 
 def parse_stir_minutes(statement, lineno=None):
     # Stir [the [nth] mixing bowl] for number minutes.
-    pattern = '(?:the( (%s))? mixing bowl )?for (\d+?) minutes\.' % (
+    pattern = r'(?:the( (%s))? mixing bowl )?for (\d+?) minutes\.' % (
         ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
@@ -281,7 +281,7 @@ def parse_stir_minutes(statement, lineno=None):
 
 def parse_stir_ingredient(statement, lineno=None):
     # Stir ingredient into the [nth] mixing bowl.
-    pattern = '(.+?) into the(?: (%s))? mixing bowl\.' % (
+    pattern = r'(.+?) into the(?: (%s))? mixing bowl\.' % (
         ORDINAL_IDENTIFIER_PATTERN)
     m = re.match(pattern, statement)
     if m is None:
@@ -305,7 +305,7 @@ def parse_stir(statement, lineno=None):
 
 def parse_mix(statement, lineno=None):
     # Mix [the [nth] mixing bowl] well.
-    pattern = '(the ((%s) )?mixing bowl )?well\.' % ORDINAL_IDENTIFIER_PATTERN
+    pattern = r'(the ((%s) )?mixing bowl )?well\.' % ORDINAL_IDENTIFIER_PATTERN
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Mix', lineno)
@@ -316,7 +316,7 @@ def parse_mix(statement, lineno=None):
 
 def parse_clean(statement, lineno=None):
     # Clean [nth] mixing bowl.
-    pattern = '((%s) )?mixing bowl\.' % ORDINAL_IDENTIFIER_PATTERN
+    pattern = r'((%s) )?mixing bowl\.' % ORDINAL_IDENTIFIER_PATTERN
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Clean', lineno)
@@ -328,7 +328,7 @@ def parse_pour(statement, lineno=None):
     # Pour contents of the [nth] mixing bowl into the [pth] baking dish.
     pattern = (
         'contents of the( (%(ord)s))? mixing bowl into the'
-        '( (%(ord)s))? baking dish\.' % {'ord': ORDINAL_IDENTIFIER_PATTERN})
+        r'( (%(ord)s))? baking dish\.' % {'ord': ORDINAL_IDENTIFIER_PATTERN})
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Pour', lineno)
@@ -343,7 +343,7 @@ def parse_pour(statement, lineno=None):
 
 def parse_refrigerate(statement, lineno=None):
     # Refrigerate [for number hours].
-    pattern = '(for ([1-9]\d*?) (hours?))?\.'
+    pattern = r'(for ([1-9]\d*?) (hours?))?\.'
     m = re.match(pattern, statement)
     if m is None:
         raise syntax_errors.InvalidCommandError('Refrigerate', lineno)
@@ -358,7 +358,7 @@ def parse_refrigerate(statement, lineno=None):
 
 def parse_loop_start(verb, statement, lineno=None):
     # Verb the ingredient.
-    m = re.match('the (.+?)\.', statement)
+    m = re.match(r'the (.+?)\.', statement)
     if m is None:
         raise syntax_errors.InvalidCommandError(verb, lineno)
     return {
@@ -367,7 +367,7 @@ def parse_loop_start(verb, statement, lineno=None):
 
 def parse_loop_end(verb, statement, lineno=None):
     # Verb [the ingredient] until verbed.
-    m = re.match('(the (.+?) )?until ([a-z]+ed)\.', statement)
+    m = re.match(r'(the (.+?) )?until ([a-z]+ed)\.', statement)
     if m is None:
         raise syntax_errors.InvalidCommandError(verb, lineno)
     return {
